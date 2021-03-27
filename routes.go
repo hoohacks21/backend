@@ -221,33 +221,33 @@ func getTasks(c *gin.Context) {
 	c.JSON(200, &tasks)
 }
 
-func postDonate(c *gin.Context) {
-	type Donation struct {
-		UID string `json:'uid'`
-		Coins string `json:'coins'`
-	}
-	var reqDonation *Donation
-
-	err := c.Bind(&reqDonation)
+func verifiedOrganization(c *gin.Context){
+	var orgProfile *Profile
+	_, err = repo.conn.QueryRow(context.Background(), selectProfileByID, &orgProfile.UID).Scan(&orgProfile.ID, &orgProfile.Name, &orgProfile.Coins, &orgProfile.Organization)
 	if err != nil {
-		c.JSON(501, err)
+		c.JSON(500, err)
 		return
 	}
-	// FINISH'
+
+	var updatedProfile *Profile
+	updatedProfile.coins = acceptedProfile.Coins + 100
+	updatedProfile.organization = true
+	_, err = repo.conn.Exec(context.Background(), updateProfilebyID, &updatedProfile.ID, &updatedProfile.Name, &updatedProfile.Coins, &updatedProfile.Organization)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
 }
 
 
 const (
-	selectProfileByID = "SELECT uid, name, coins. organization FROM profiles WHERE uid $1;"
+	selectProfileByID = "SELECT uid, name, coins, organization FROM profiles WHERE uid $1;"
 	updateProfilebyID = "UPDATE profiles SET (name, coins, organization) WHERE uid $1"
 	selectTaskByID = "SELECT uid, created_by, date_to_complete, task_type, time_to_complete, distance, reward, description FROM tasks WHERE id $1;"
 	updateTaskByID = "UPDATE tasks SET (status, reward) WHERE uid $1;"
 	postTaskQuery = "INSERT_INTO tasks (uid, created_by, date_to_complete, task_type, time_to_complete, distance, reward, description) VALUES ($1,$2,$3,$4,$5,$6,$7);"
 	deleteTaskByID = "DELETE FROM tasks WHERE uid = $1;"
 	getTasksQuery = "SELECT * FROM tasks WHERE ID NOT IN (SELECT TaskID FROM tasks_accepted);"
-	// postTaskSubtract = ""
-	// postDonateAdd = ""
-	// addInitialOrgCoins = ""
 	selectAcceptedTask = "SELECT uid, task_id FROM tasks_accepted WHERE task_id $1"
 	postAcceptTask = "INSERT_INTO tasks_accepted (uid, task_id) VALUES ($1,$2)"
 )
