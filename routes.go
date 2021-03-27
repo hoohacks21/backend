@@ -90,7 +90,7 @@ func postTask(c *gin.Context) {
 		return
 	}
 
-	reqTask.CreatedBy = c.GetString("uid")
+	reqTask.CreatedBy = c.GetString("c")
 
 	_, err = repo.conn.Exec(context.Background(), postTaskQuery, 
 		&reqTask.CreatedBy, 
@@ -104,10 +104,21 @@ func postTask(c *gin.Context) {
 
 	//Subtract reward from created_by user
 
+	var acceptedProfile *Profile
+	_, err = repo.conn.QueryRow(context.Background(), selectProfileByID, &reqTask.CreatedBy).Scan(&acceptedProfile.ID, &acceptedProfile.Name, &acceptedProfile.Coins, &acceptedProfile.Organization)
 	if err != nil {
 		c.JSON(500, err)
 		return
 	}
+
+	var updatedProfile *Profile
+	updatedProfile.coins = acceptedProfile.Coins - reqTask.reward
+	_, err = repo.conn.Exec(context.Background(), updateProfilebyID, &updatedProfile.ID, &updatedProfile.Name, &updatedProfile.Coins, &updatedProfile.Organization)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+
 	
 	c.JSON(200, true)
 }
