@@ -20,7 +20,7 @@ type Task struct {
 	Distance int 					`json:'distance'`
 	Reward int 						`json:'reward'`
 	Description string				`json:'description'`
-	Status string					`json:'description'`
+	Status int					    `json:'status'`
 }
 
 type TasksAccepted struct {
