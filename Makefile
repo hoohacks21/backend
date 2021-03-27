@@ -3,7 +3,6 @@ build:
 
 pull:
 	docker pull alphakilo07/hoohack-backend
-1
 push:
 	docker tag hoohack-backend alphakilo07/hoohack-backend
 	docker push alphakilo07/hoohack-backend

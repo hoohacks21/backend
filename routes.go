@@ -105,14 +105,14 @@ func postTask(c *gin.Context) {
 	//Subtract reward from created_by user
 
 	var acceptedProfile *Profile
-	_, err = repo.conn.QueryRow(context.Background(), selectProfileByID, &reqTask.CreatedBy).Scan(&acceptedProfile.ID, &acceptedProfile.Name, &acceptedProfile.Coins, &acceptedProfile.Organization)
+	err = repo.conn.QueryRow(context.Background(), selectProfileByID, &reqTask.CreatedBy).Scan(&acceptedProfile.ID, &acceptedProfile.Name, &acceptedProfile.Coins, &acceptedProfile.Organization)
 	if err != nil {
 		c.JSON(500, err)
 		return
 	}
 
 	var updatedProfile *Profile
-	updatedProfile.coins = acceptedProfile.Coins - reqTask.reward
+	updatedProfile.Coins = acceptedProfile.Coins - reqTask.Reward
 	_, err = repo.conn.Exec(context.Background(), updateProfilebyID, &updatedProfile.ID, &updatedProfile.Name, &updatedProfile.Coins, &updatedProfile.Organization)
 	if err != nil {
 		c.JSON(500, err)
@@ -149,7 +149,7 @@ func acceptTask(c *gin.Context) {
 
 func completeTask(c *gin.Context){
 	var existingTask *Task
-	_, err = repo.conn.QueryRow(context.Background(), selectTaskByID, c.GetString("task_id")).Scan(&existingTask.ID, &existingTask.CreatedBy, &existingTask.DateToComplete, &existingTask.TaskType, &existingTask.TimeToComplete, &existingTask.Distance, &existingTask.Reward, &existingTask.Description, &existingTask.Status)
+	err := repo.conn.QueryRow(context.Background(), selectTaskByID, c.GetString("task_id")).Scan(&existingTask.ID, &existingTask.CreatedBy, &existingTask.DateToComplete, &existingTask.TaskType, &existingTask.TimeToComplete, &existingTask.Distance, &existingTask.Reward, &existingTask.Description, &existingTask.Status)
 	if err != nil {
 		c.JSON(500, err)
 		return
@@ -157,7 +157,7 @@ func completeTask(c *gin.Context){
 
 	//FIXME: does this only return one entry? or can several users accept task
 	var accpetedTaskEntry *TasksAccepted
-	_, err = repo.conn.QueryRow(context.Background(), selectTaskByID, c.GetString("task_id")).Scan(&accpetedTaskEntry.UID, &accpetedTaskEntry.TaskID)
+	err = repo.conn.QueryRow(context.Background(), selectTaskByID, c.GetString("task_id")).Scan(&accpetedTaskEntry.UID, &accpetedTaskEntry.TaskID)
 	if err != nil {
 		c.JSON(500, err)
 		return
@@ -165,14 +165,14 @@ func completeTask(c *gin.Context){
 
 	//FIXME: Assumes only one user can accept task
 	var acceptedProfile *Profile
-	_, err = repo.conn.QueryRow(context.Background(), selectProfileByID, &accpetedTaskEntry.UID).Scan(&acceptedProfile.ID, &acceptedProfile.Name, &acceptedProfile.Coins, &acceptedProfile.Organization)
+	err = repo.conn.QueryRow(context.Background(), selectProfileByID, &accpetedTaskEntry.UID).Scan(&acceptedProfile.ID, &acceptedProfile.Name, &acceptedProfile.Coins, &acceptedProfile.Organization)
 	if err != nil {
 		c.JSON(500, err)
 		return
 	}
 
 	var updatedProfile *Profile
-	updatedProfile.coins = acceptedProfile.Coins + existingTask.reward
+	updatedProfile.Coins = acceptedProfile.Coins + existingTask.Reward
 	_, err = repo.conn.Exec(context.Background(), updateProfilebyID, &updatedProfile.ID, &updatedProfile.Name, &updatedProfile.Coins, &updatedProfile.Organization)
 	if err != nil {
 		c.JSON(500, err)
@@ -190,7 +190,7 @@ func completeTask(c *gin.Context){
 	updatedTask.Description = existingTask.Description
 	updatedTask.ID = existingTask.ID
 
-	_, err := repo.conn.Exec(context.Background(), updateTaskByID, &updatedTask.ID, &updatedTask.ID, &updatedTask.CreatedBy, &updatedTask.DateToComplete, &updatedTask.TaskType, &updatedTask.TimeToComplete, &updatedTask.Distance, &updatedTask.Reward, &updatedTask.Description, &updatedTask.Status)
+	_, err = repo.conn.Exec(context.Background(), updateTaskByID, &updatedTask.ID, &updatedTask.ID, &updatedTask.CreatedBy, &updatedTask.DateToComplete, &updatedTask.TaskType, &updatedTask.TimeToComplete, &updatedTask.Distance, &updatedTask.Reward, &updatedTask.Description, &updatedTask.Status)
 	if err != nil {
 		c.JSON(500, err)
 		return
@@ -242,15 +242,15 @@ func getTasks(c *gin.Context) {
 
 func verifiedOrganization(c *gin.Context){
 	var orgProfile *Profile
-	_, err = repo.conn.QueryRow(context.Background(), selectProfileByID, &orgProfile.UID).Scan(&orgProfile.ID, &orgProfile.Name, &orgProfile.Coins, &orgProfile.Organization)
+	err := repo.conn.QueryRow(context.Background(), selectProfileByID, &orgProfile.ID).Scan(&orgProfile.ID, &orgProfile.Name, &orgProfile.Coins, &orgProfile.Organization)
 	if err != nil {
 		c.JSON(500, err)
 		return
 	}
 
 	var updatedProfile *Profile
-	updatedProfile.coins = acceptedProfile.Coins + 100
-	updatedProfile.organization = true
+	updatedProfile.Coins = orgProfile.Coins + 100
+	updatedProfile.Organization = true
 	_, err = repo.conn.Exec(context.Background(), updateProfilebyID, &updatedProfile.ID, &updatedProfile.Name, &updatedProfile.Coins, &updatedProfile.Organization)
 	if err != nil {
 		c.JSON(500, err)

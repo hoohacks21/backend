@@ -26,7 +26,7 @@ var (
 )
 
 const (
-	sqlConnString = "jdbc:postgresql://35.224.45.138:5432/postgres"
+	sqlConnString = "postgresql://akin:akin@35.224.45.138:5432/postgres"
 )
 
 func main() {
@@ -90,7 +90,8 @@ func main() {
 	r.POST("/task", authMiddleware(), postTask)
 	r.DELETE("/task", authMiddleware(), deleteTask)
 	r.GET("/tasks", authMiddleware(), getTasks)
-	r.POST("/donate", authMiddleware(), postDonate)
+	r.POST("/complete_task", authMiddleware(), completeTask)
+	r.PUT("/verified_organization", authMiddleware(), verifiedOrganization)
 
 	// r.POST("/endpoint", authMiddleware(), endpointDandler)
 
