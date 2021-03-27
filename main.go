@@ -26,7 +26,7 @@ var (
 )
 
 const (
-	// sqlConnString = "postgres://allen:jzx5sWtgykoGDe8Y@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&sslrootcert=secrets/cc-ca.crt&options=--cluster=nimble-vole-835"
+	sqlConnString = "jdbc:postgresql://35.224.45.138:5432/postgres"
 )
 
 func main() {
@@ -85,7 +85,7 @@ func main() {
 	
 
 	r.GET("/profile", authMiddleware(), getProfile)
-	r.PUT("/profile", authMiddleware(), updateProfile)
+	// r.PUT("/profile", authMiddleware(), updateProfile)
 	r.GET("/task", authMiddleware(), getTask)
 	r.POST("/task", authMiddleware(), postTask)
 	r.DELETE("/task", authMiddleware(), deleteTask)
