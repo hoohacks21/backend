@@ -15,7 +15,7 @@ import (
 
 var (
 	app            *firebase.App
-	// repo           *Repo
+	repo           *Repo
 	corsMiddleware = cors.New(cors.Config{
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
 		AllowHeaders: []string{"Authorization", "Origin", "Content-Length", "Content-Type"},
