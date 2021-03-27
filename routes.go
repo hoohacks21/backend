@@ -167,11 +167,19 @@ func completeTask(c *gin.Context){
 		c.JSON(500, err)
 		return
 	}
-	
 
+	var updatedTask *Task
+	updatedTask.Status = 1
+	updatedTask.CreatedBy = existingTask.CreatedBy
+	updatedTask.DateToComplete = existingTask.DateToComplete
+	updatedTask.TaskType = existingTask.TaskType
+	updatedTask.TimeToComplete = existingTask.TimeToComplete
+	updatedTask.Distance = existingTask.Distance
+	updatedTask.Reward = existingTask.Reward
+	updatedTask.Description = existingTask.Description
+	updatedTask.ID = existingTask.ID
 
-	var taskID *string
-	_, err := repo.conn.Exec(context.Background(), updateTaskByID, c.GetString("id"), &taskID)
+	_, err := repo.conn.Exec(context.Background(), updateTaskByID, &updatedTask.ID, &updatedTask.ID, &updatedTask.CreatedBy, &updatedTask.DateToComplete, &updatedTask.TaskType, &updatedTask.TimeToComplete, &updatedTask.Distance, &updatedTask.Reward, &updatedTask.Description, &updatedTask.Status)
 	if err != nil {
 		c.JSON(500, err)
 		return
