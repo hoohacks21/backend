@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/gin-gonic/gin"
+)
+
 func getProfile(c *gin.Context) {
 	var prof *Profile
 	err := c.Bind(&prof)

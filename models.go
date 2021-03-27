@@ -5,17 +5,17 @@ import (
 )
 
 type Profile struct {
-	string Name `json:'name'`
-	int Coins	`json:'coins'`
+	Name string `json:'name'`
+	Coins int `json:'coins'`
 }
 
 type Task struct {
-	string CreatedBy `json:'created_by'`
-	time.Time DateToComplete `json:'date_to_complete'`
-	string TaskType `json:'task_type'`
-	time.Duration TimeToComplete `json:'time_to_complete'`
-	int Distance `json:'distance'`
-	int Reward `json:'reward'`
+	CreatedBy string `json:'created_by'`
+	DateToComplete time.Time `json:'date_to_complete'`
+	TaskType string `json:'task_type'`
+	TimeToComplete time.Duration `json:'time_to_complete'`
+	Distance int `json:'distance'`
+	Reward int `json:'reward'`
 }
 
 type GetTaskResponse []*Task
