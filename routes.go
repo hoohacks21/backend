@@ -57,6 +57,7 @@ func updateProfile(c *gin.Context) {
 	c.JSON(200, &prof)
 }
 
+
 func getTask(c *gin.Context) {
 	var task *Task
 	err := c.Bind(&task)
@@ -135,6 +136,50 @@ func acceptTask(c *gin.Context) {
 	
 }
 
+func completeTask(c *gin.Context){
+	var existingTask *Task
+	_, err = repo.conn.QueryRow(context.Background(), selectTaskByID, c.GetString("task_id")).Scan(&existingTask.ID, &existingTask.CreatedBy, &existingTask.DateToComplete, &existingTask.TaskType, &existingTask.TimeToComplete, &existingTask.Distance, &existingTask.Reward, &existingTask.Description, &existingTask.Status)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+
+	//FIXME: does this only return one entry? or can several users accept task
+	var accpetedTaskEntry *TasksAccepted
+	_, err = repo.conn.QueryRow(context.Background(), selectTaskByID, c.GetString("task_id")).Scan(&accpetedTaskEntry.UID, &accpetedTaskEntry.TaskID)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+
+	//FIXME: Assumes only one user can accept task
+	var acceptedProfile *Profile
+	_, err = repo.conn.QueryRow(context.Background(), selectProfileByID, &accpetedTaskEntry.UID).Scan(&acceptedProfile.ID, &acceptedProfile.Name, &acceptedProfile.Coins, &acceptedProfile.Organization)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+
+	var updatedProfile *Profile
+	updatedProfile.coins = acceptedProfile.Coins + existingTask.reward
+	_, err = repo.conn.Exec(context.Background(), updateProfilebyID, &updatedProfile.ID, &updatedProfile.Name, &updatedProfile.Coins, &updatedProfile.Organization)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+	
+
+
+	var taskID *string
+	_, err := repo.conn.Exec(context.Background(), updateTaskByID, c.GetString("id"), &taskID)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+	
+	
+	// Get user who completed the task by their uid, update task in task table, give suer reward.
+}
 func deleteTask(c *gin.Context) {
 	var targetID *string
 	_, err := repo.conn.Exec(context.Background(), deleteTaskByID, c.GetString("id"), &targetID)
@@ -193,14 +238,16 @@ func postDonate(c *gin.Context) {
 
 
 const (
-	selectProfileByID = "SELECT uid, name, coins FROM profiles WHERE uid $1;"
-	updateProfilebyID = "UPDATE profiles SET (name, coins) WHERE uid $1"
-	selectTaskByID = "SELECT uid, created_by, date_to_complete, task_type, time_to_complete, distance, reward, description FROM tasks WHERE uid $1;"
+	selectProfileByID = "SELECT uid, name, coins. organization FROM profiles WHERE uid $1;"
+	updateProfilebyID = "UPDATE profiles SET (name, coins, organization) WHERE uid $1"
+	selectTaskByID = "SELECT uid, created_by, date_to_complete, task_type, time_to_complete, distance, reward, description FROM tasks WHERE id $1;"
+	updateTaskByID = "UPDATE tasks SET (status, reward) WHERE uid $1;"
 	postTaskQuery = "INSERT_INTO tasks (uid, created_by, date_to_complete, task_type, time_to_complete, distance, reward, description) VALUES ($1,$2,$3,$4,$5,$6,$7);"
 	deleteTaskByID = "DELETE FROM tasks WHERE uid = $1;"
 	getTasksQuery = "SELECT * FROM tasks WHERE ID NOT IN (SELECT TaskID FROM tasks_accepted);"
 	// postTaskSubtract = ""
 	// postDonateAdd = ""
 	// addInitialOrgCoins = ""
+	selectAcceptedTask = "SELECT uid, task_id FROM tasks_accepted WHERE task_id $1"
 	postAcceptTask = "INSERT_INTO tasks_accepted (uid, task_id) VALUES ($1,$2)"
 )
