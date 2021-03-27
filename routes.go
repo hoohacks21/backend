@@ -149,7 +149,13 @@ func acceptTask(c *gin.Context) {
 
 func completeTask(c *gin.Context){
 	var existingTask *Task
-	err := repo.conn.QueryRow(context.Background(), selectTaskByID, c.GetString("task_id")).Scan(&existingTask.ID, &existingTask.CreatedBy, &existingTask.DateToComplete, &existingTask.TaskType, &existingTask.TimeToComplete, &existingTask.Distance, &existingTask.Reward, &existingTask.Description, &existingTask.Status)
+	err := c.Bind(&existingTask)
+	if err != nil {
+		c.JSON(501, err)
+		return
+	}
+
+	err = repo.conn.QueryRow(context.Background(), selectTaskByID, existingTask.ID).Scan(&existingTask.ID, &existingTask.CreatedBy, &existingTask.DateToComplete, &existingTask.TaskType, &existingTask.TimeToComplete, &existingTask.Distance, &existingTask.Reward, &existingTask.Description, &existingTask.Status)
 	if err != nil {
 		c.JSON(500, err)
 		return
@@ -157,7 +163,7 @@ func completeTask(c *gin.Context){
 
 	//FIXME: does this only return one entry? or can several users accept task
 	var accpetedTaskEntry *TasksAccepted
-	err = repo.conn.QueryRow(context.Background(), selectTaskByID, c.GetString("task_id")).Scan(&accpetedTaskEntry.UID, &accpetedTaskEntry.TaskID)
+	err = repo.conn.QueryRow(context.Background(), selectTaskByID, existingTask.ID).Scan(&accpetedTaskEntry.UID, &accpetedTaskEntry.TaskID)
 	if err != nil {
 		c.JSON(500, err)
 		return
@@ -201,7 +207,13 @@ func completeTask(c *gin.Context){
 }
 func deleteTask(c *gin.Context) {
 	var targetID *string
-	_, err := repo.conn.Exec(context.Background(), deleteTaskByID, c.GetString("id"), &targetID)
+	err := c.Bind(&targetID)
+	if err != nil {
+		c.JSON(501, err)
+		return
+	}
+	
+	_, err = repo.conn.Exec(context.Background(), deleteTaskByID, c.GetString("uid"), &targetID)
 	if err != nil {
 		c.JSON(500, err)
 		return
@@ -242,7 +254,13 @@ func getTasks(c *gin.Context) {
 
 func verifiedOrganization(c *gin.Context){
 	var orgProfile *Profile
-	err := repo.conn.QueryRow(context.Background(), selectProfileByID, &orgProfile.ID).Scan(&orgProfile.ID, &orgProfile.Name, &orgProfile.Coins, &orgProfile.Organization)
+	err := c.Bind(&orgProfile)
+	if err != nil {
+		c.JSON(501, err)
+		return
+	}
+
+	err = repo.conn.QueryRow(context.Background(), selectProfileByID, &orgProfile.ID).Scan(&orgProfile.ID, &orgProfile.Name, &orgProfile.Coins, &orgProfile.Organization)
 	if err != nil {
 		c.JSON(500, err)
 		return
