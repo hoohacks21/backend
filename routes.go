@@ -1,20 +1,23 @@
 package main
 
 import (
+	"log"
 	"context"
 
 	"github.com/gin-gonic/gin"
+	
+	"github.com/jackc/pgx/v4"
 )
 
 func getProfile(c *gin.Context) {
-	var prof *Profile
-	err := c.Bind(&prof)
-	if err != nil {
-		c.JSON(501, err)
-		return
-	}
-	err = repo.conn.QueryRow(context.Background(), selectProfileByID, &prof.ID).Scan(&prof.Name, &prof.Coins, &prof.Organization)
-	if err != nil {
+	prof := &Profile{}
+	
+	uid := c.GetString("uid");
+	err := repo.conn.QueryRow(context.Background(), selectProfileByID, uid).Scan(&prof.Name, &prof.Coins, &prof.Organization)
+	 if err != pgx.ErrNoRows{
+		c.JSON(500, "Profile does not exist")
+	}else if err != nil  {
+		log.Printf("[GET PROFILE] %v", err)
 		c.JSON(500, err)
 		return
 	}
@@ -24,14 +27,18 @@ func getProfile(c *gin.Context) {
 func updateProfile(c *gin.Context) {
 	var prof *Profile
 	err := c.Bind(&prof)
-	if err != nil {
+	if err != nil &&  err != pgx.ErrNoRows   {
+		log.Printf("[UPDATE PROFILE] %v", err)
 		c.JSON(501, err)
 		return
 	}
 
-	var oldProfile *Profile
-	_, err = repo.conn.Exec(context.Background(), selectProfileByID, &oldProfile.ID, &oldProfile.Name, &oldProfile.Coins, &oldProfile.Organization)
-	if err != nil {
+	prof.ID = c.GetString("uid");
+
+	oldProfile := &Profile{}
+	err = repo.conn.QueryRow(context.Background(), selectProfileByID, &prof.ID).Scan(&oldProfile.ID, &oldProfile.Name, &oldProfile.Coins, &oldProfile.Organization)
+	if err != nil && err != pgx.ErrNoRows {
+		log.Printf("[UPDATE PROFILE] %v", err)
 		c.JSON(500, err)
 		return
 	}
@@ -279,13 +286,13 @@ func verifiedOrganization(c *gin.Context){
 
 
 const (
-	selectProfileByID = "SELECT uid, name, coins, organization FROM profiles WHERE uid $1;"
-	updateProfilebyID = "UPDATE profiles SET (name, coins, organization) WHERE uid $1"
-	selectTaskByID = "SELECT uid, created_by, date_to_complete, task_type, time_to_complete, distance, reward, description FROM tasks WHERE id $1;"
-	updateTaskByID = "UPDATE tasks SET (status, reward) WHERE uid $1;"
+	selectProfileByID = "SELECT uid, name, coins, organization FROM profiles WHERE uid = $1;"
+	updateProfilebyID = "UPDATE profiles SET (name, coins, organization) = ($2, $3, $4) WHERE uid = $1"
+	selectTaskByID = "SELECT uid, created_by, date_to_complete, task_type, time_to_complete, distance, reward, description FROM tasks WHERE id = $1;"
+	updateTaskByID = "UPDATE tasks SET (status, reward) WHERE uid = $1;"
 	postTaskQuery = "INSERT_INTO tasks (uid, created_by, date_to_complete, task_type, time_to_complete, distance, reward, description) VALUES ($1,$2,$3,$4,$5,$6,$7);"
 	deleteTaskByID = "DELETE FROM tasks WHERE uid = $1;"
 	getTasksQuery = "SELECT * FROM tasks WHERE ID NOT IN (SELECT TaskID FROM tasks_accepted);"
-	selectAcceptedTask = "SELECT uid, task_id FROM tasks_accepted WHERE task_id $1"
+	selectAcceptedTask = "SELECT uid, task_id FROM tasks_accepted WHERE task_id = $1"
 	postAcceptTask = "INSERT_INTO tasks_accepted (uid, task_id) VALUES ($1,$2)"
 )
