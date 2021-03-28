@@ -34,7 +34,7 @@ func updateProfile(c *gin.Context) {
 	err := c.Bind(&prof)
 	if err != nil && err != pgx.ErrNoRows {
 		log.Printf("[UPDATE PROFILE] %v", err)
-		c.JSON(501, err)
+		c.JSON(500, err)
 		return
 	}
 
@@ -89,6 +89,7 @@ func getTask(c *gin.Context) {
 		&task.Long,
 		&task.Reward,
 		&task.Description,
+		&task.Location,
 	)
 	if err != nil {
 		log.Printf("[GET TASK 2] %v | %v", taskID, err)
@@ -133,6 +134,7 @@ func postTask(c *gin.Context) {
 		&reqTask.Lat,
 		&reqTask.Reward,
 		&reqTask.Description,
+		&reqTask.Location,
 		1,
 	)
 	if err != nil {
@@ -194,7 +196,7 @@ func completeTask(c *gin.Context) {
 
 	existingTask := &Task{}
 
-	err = repo.conn.QueryRow(context.Background(), selectTaskByID, taskCompleteRequest.TaskID).Scan(&existingTask.ID, &existingTask.CreatedBy, &existingTask.DateToComplete, &existingTask.TaskType, &existingTask.TimeToComplete, &existingTask.Lat, &existingTask.Long, &existingTask.Reward, &existingTask.Description)
+	err = repo.conn.QueryRow(context.Background(), selectTaskByID, taskCompleteRequest.TaskID).Scan(&existingTask.ID, &existingTask.CreatedBy, &existingTask.DateToComplete, &existingTask.TaskType, &existingTask.TimeToComplete, &existingTask.Lat, &existingTask.Long, &existingTask.Reward, &existingTask.Description, &existingTask.Location)
 	if err != nil {
 		log.Printf("[COMPLETE TASK] %v", err)
 		c.JSON(500, err)
@@ -263,6 +265,7 @@ func getTasks(c *gin.Context) {
 			&task.Long,
 			&task.Reward,
 			&task.Description,
+			&task.Location,
 		)
 		if err != nil {
 			log.Printf("[GET TASKS 2] %v", err)
@@ -297,9 +300,45 @@ func getMyTasks(c *gin.Context) {
 			&task.Long,
 			&task.Reward,
 			&task.Description,
+			&task.Location,
 		)
 		if err != nil {
 			log.Printf("[GET TASKS 2] %v", err)
+			c.JSON(501, err)
+			return
+		}
+		tasks = append(tasks, task)
+	}
+
+	c.JSON(200, &tasks)
+}
+
+func getTasksIMade(c *gin.Context) {
+	rows, err := repo.conn.Query(context.Background(), getTasksIMadeQuery, c.GetString("uid"))
+	if err != nil {
+		log.Printf("[getTasksIMade] %v", err)
+		c.JSON(500, err)
+		return
+	}
+
+	tasks := make([]*Task, 0)
+
+	for rows.Next() {
+		task := &Task{}
+		err = rows.Scan(
+			&task.ID,
+			&task.CreatedBy,
+			&task.DateToComplete,
+			&task.TaskType,
+			&task.TimeToComplete,
+			&task.Lat,
+			&task.Long,
+			&task.Reward,
+			&task.Description,
+			&task.Location,
+		)
+		if err != nil {
+			log.Printf("[getTasksIMade 2] %v", err)
 			c.JSON(501, err)
 			return
 		}
@@ -376,10 +415,11 @@ const (
 	selectTaskByID = "SELECT * FROM tasks WHERE id = $1;"
 	updateTaskByID = "UPDATE tasks SET reward = $2 WHERE uid = $1;"
 	postTaskQuery  = "INSERT INTO tasks (created_by, date_to_complete, task_type, time_to_complete, lat, " +
-		"long, reward, description) VALUES ($1,$2,$3,$4,$5,$6,$7,$8);"
+		"long, reward, description, location) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);"
 	deleteTaskByID     = "DELETE FROM tasks WHERE created_by = $1 and id = $2;"
 	getTasksQuery      = "SELECT * FROM tasks WHERE ID NOT IN (SELECT task_id FROM tasks_accepted);"
-	getMyTasksQuery    = "SELECT * FRO tasks_accepted WHERE uid = $1;"
+	getMyTasksQuery    = "SELECT * FROM tasks_accepted WHERE uid = $1;"
+	getTasksIMadeQuery = "SELECT * FROM tasks WHERE created_by = $1;"
 	selectAcceptedTask = "SELECT uid, task_id FROM tasks_accepted WHERE task_id = $1"
 	postAcceptTask     = "INSERT INTO tasks_accepted VALUES ($1,$2,$3)"
 )

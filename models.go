@@ -21,6 +21,7 @@ type Task struct {
 	Long           float64   `json:"long"`
 	Reward         int       `json:"reward"`
 	Description    string    `json:"description"`
+	Location       string    `json:"location"`
 }
 
 // type TaskResponse struct {
