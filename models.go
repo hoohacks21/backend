@@ -11,17 +11,33 @@ type Profile struct {
 	Organization bool `json:"organization"`
 }
 
+
 type Task struct {
-	ID string 						`json:"id"`
+	ID int 						`json:"id"`
 	CreatedBy string 				`json:"created_by"`
 	DateToComplete time.Time 		`json:"date_to_complete"`
 	TaskType string 				`json:"task_type"`
-	TimeToComplete time.Duration 	`json:"time_to_complete"`
-	Distance int 					`json:"distance"`
+	TimeToComplete int 	`json:"time_to_complete"`
+	Lat float64 						`json:"lat"`
+	Long float64 				`json:"long"`
 	Reward int 						`json:"reward"`
 	Description string				`json:"description"`
 	Status int					    `json:"status"`
 }
+
+
+// type TaskResponse struct {
+// 	Task
+// 	Distance int 					`json:"distance"`
+// }
+
+
+// type TaskRequest struct {
+// 	Task
+// 	Lat float64 						`json:"lat"`
+// 	Long float64 				`json:"long"`
+// }
+
 
 type TasksAccepted struct {
 	UID string 						`json:"uid"`
@@ -29,3 +45,8 @@ type TasksAccepted struct {
 }
 
 type GetTaskResponse []*Task
+
+type TaskCompleteRequest struct {
+	UID string 						`json:"uid"`
+	TaskID string 					`json:"task_id"`
+}
