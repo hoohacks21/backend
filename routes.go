@@ -86,7 +86,6 @@ func getTask(c *gin.Context) {
 		&task.Long,
 		&task.Reward,
 		&task.Description,
-		&task.Status,
 	)
 	if err != nil {
 		log.Printf("[GET TASK 2] %v | %v", taskID, err)
@@ -139,8 +138,6 @@ func postTask(c *gin.Context) {
 		return
 	}
 
-	//Subtract reward from created_by user
-
 	updatedProfile := &Profile{}
 	updatedProfile.ID = c.GetString("uid")
 	updatedProfile.Coins = acceptedProfile.Coins - reqTask.Reward
@@ -159,6 +156,7 @@ func acceptTask(c *gin.Context) {
 	var reqTask *TasksAccepted
 	err := c.Bind(&reqTask)
 	if err != nil {
+		log.Printf("[ACCEPT TASK] %v", err)
 		c.JSON(501, err)
 		return
 	}
@@ -168,9 +166,11 @@ func acceptTask(c *gin.Context) {
 	_, err = repo.conn.Exec(context.Background(), postAcceptTask, 
 		&reqTask.UID, 
 		&reqTask.TaskID,
+		1,
 	)
 
 	if err != nil {
+		log.Printf("[ACCEPT TASK] %v", err)
 		c.JSON(500, err)
 		return
 	}
@@ -192,28 +192,12 @@ func completeTask(c *gin.Context){
 
 	existingTask := &Task{}
 
-	err = repo.conn.QueryRow(context.Background(), selectTaskByID, taskCompleteRequest.TaskID).Scan(&existingTask.ID, &existingTask.CreatedBy, &existingTask.DateToComplete, &existingTask.TaskType, &existingTask.TimeToComplete, &existingTask.Lat, &existingTask.Long, &existingTask.Reward, &existingTask.Description, &existingTask.Status)
+	err = repo.conn.QueryRow(context.Background(), selectTaskByID, taskCompleteRequest.TaskID).Scan(&existingTask.ID, &existingTask.CreatedBy, &existingTask.DateToComplete, &existingTask.TaskType, &existingTask.TimeToComplete, &existingTask.Lat, &existingTask.Long, &existingTask.Reward, &existingTask.Description)
 	if err != nil { 
 		log.Printf("[COMPLETE TASK] %v", err)
 		c.JSON(500, err)
 		return
 	}
-
-	//FIXME: does this only return one entry? or can several users accept task
-	// var accpetedTaskEntry *TasksAccepted
-	// err = repo.conn.QueryRow(context.Background(), selectTaskByID, existingTask.ID).Scan(&accpetedTaskEntry.UID, &accpetedTaskEntry.TaskID)
-	// if err != nil {
-	// 	c.JSON(500, err)
-	// 	return
-	// }
-
-	//FIXME: Assumes only one user can accept task
-	// var acceptedProfile *Profile
-	// err = repo.conn.QueryRow(context.Background(), selectProfileByID, &accpetedTaskEntry.UID).Scan(&acceptedProfile.ID, &acceptedProfile.Name, &acceptedProfile.Coins, &acceptedProfile.Organization)
-	// if err != nil {
-	// 	c.JSON(500, err)
-	// 	return
-	// }
 
 	_, err = repo.conn.Exec(context.Background(), addRewardByID, taskCompleteRequest.UID, existingTask.Reward)
 	if err != nil {
@@ -221,17 +205,6 @@ func completeTask(c *gin.Context){
 		c.JSON(500, err)
 		return
 	}
-
-	// var updatedTask *Task
-	// updatedTask.Status = 1
-	// updatedTask.CreatedBy = existingTask.CreatedBy
-	// updatedTask.DateToComplete = existingTask.DateToComplete
-	// updatedTask.TaskType = existingTask.TaskType
-	// updatedTask.TimeToComplete = existingTask.TimeToComplete
-	// updatedTask.Distance = existingTask.Distance
-	// updatedTask.Reward = existingTask.Reward
-	// updatedTask.Description = existingTask.Description
-	// updatedTask.ID = existingTask.ID
 
 	_, err = repo.conn.Exec(context.Background(), completeTaskByID, taskCompleteRequest.TaskID, 2)
 	if err != nil {
@@ -289,7 +262,6 @@ func getTasks(c *gin.Context) {
 			&task.Long,
 			&task.Reward,
 			&task.Description,
-			&task.Status,
 		)
 		if err != nil {
 			log.Printf("[GET TASKS 2] %v", err)
@@ -303,31 +275,20 @@ func getTasks(c *gin.Context) {
 }
 
 func verifiedOrganization(c *gin.Context){
-	var orgProfile *Profile
-	err := c.Bind(&orgProfile)
-	if err != nil {
-		c.JSON(501, err)
-		return
-	}
+	uid := c.GetString("uid")
 
-	err = repo.conn.QueryRow(context.Background(), selectProfileByID, &orgProfile.ID).Scan(&orgProfile.ID, &orgProfile.Name, &orgProfile.Coins, &orgProfile.Organization)
+	_, err := repo.conn.Exec(context.Background(), promoteToOrg, uid, 100, true)
 	if err != nil {
 		c.JSON(500, err)
 		return
 	}
 
-	var updatedProfile *Profile
-	updatedProfile.Coins = orgProfile.Coins + 100
-	updatedProfile.Organization = true
-	_, err = repo.conn.Exec(context.Background(), updateProfilebyID, &updatedProfile.ID, &updatedProfile.Name, &updatedProfile.Coins, &updatedProfile.Organization)
-	if err != nil {
-		c.JSON(500, err)
-		return
-	}
+	c.JSON(200, true)
 }
 
 
 const (
+	promoteToOrg = "UPDATE profiles SET coins = coins + $2, organization = $3 WHERE uid = $1"
 	completeTaskByID = "UPDATE tasks_accepted SET status = $2 WHERE task_id = $1"
 	addRewardByID = "UPDATE profiles SET coins = coins + $2 WHERE uid = $1"
 	selectProfileByID = "SELECT uid, name, coins, organization FROM profiles WHERE uid = $1;"
@@ -336,10 +297,10 @@ const (
 	"ON CONFLICT (uid )" +
 	"DO UPDATE SET name = $2, coins = $3, organization = $4;"
 	selectTaskByID = "SELECT * FROM tasks WHERE id = $1;"
-	updateTaskByID = "UPDATE tasks SET (status, reward) = $2, $3 WHERE uid = $1;"
-	postTaskQuery = "INSERT INTO tasks (created_by, date_to_complete, task_type, time_to_complete, lat, long, reward, description, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);"
+	updateTaskByID = "UPDATE tasks SET reward = $2 WHERE uid = $1;"
+	postTaskQuery = "INSERT INTO tasks (created_by, date_to_complete, task_type, time_to_complete, lat, long, reward, description) VALUES ($1,$2,$3,$4,$5,$6,$7,$8);"
 	deleteTaskByID = "DELETE FROM tasks WHERE created_by = $1 and id = $2;"
 	getTasksQuery = "SELECT * FROM tasks WHERE ID NOT IN (SELECT task_id FROM tasks_accepted);"
 	selectAcceptedTask = "SELECT uid, task_id FROM tasks_accepted WHERE task_id = $1"
-	postAcceptTask = "INSERT INTO tasks_accepted (uid, task_id) VALUES ($1,$2)"
+	postAcceptTask = "INSERT INTO tasks_accepted VALUES ($1,$2,$3)"
 )

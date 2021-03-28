@@ -41,7 +41,7 @@ type Task struct {
 
 type TasksAccepted struct {
 	UID string 						`json:"uid"`
-	TaskID string 					`json:"task_id"`
+	TaskID int 					`json:"task_id"`
 }
 
 type GetTaskResponse []*Task

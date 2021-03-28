@@ -91,6 +91,7 @@ func main() {
 	r.DELETE("/task", authMiddleware(), deleteTask)
 	r.GET("/tasks", authMiddleware(), getTasks)
 	r.POST("/complete_task", authMiddleware(), completeTask)
+	r.POST("/accept_task", authMiddleware(), acceptTask)
 	r.PUT("/verified_organization", authMiddleware(), verifiedOrganization)
 
 	// r.POST("/endpoint", authMiddleware(), endpointDandler)
