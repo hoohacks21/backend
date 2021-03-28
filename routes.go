@@ -13,12 +13,12 @@ import (
 func getProfile(c *gin.Context) {
 	prof := &Profile{}
 
-	uid := c.GetString("uid")
-	prof.ID = uid
-	err := repo.conn.QueryRow(context.Background(), selectProfileByID, uid).Scan(&prof.Name, &prof.Coins, &prof.Organization)
+	prof.ID = c.GetString("uid")
+	// log.Println(selectProfileByID)
+	err := repo.conn.QueryRow(context.Background(), selectProfileByID, prof.ID).Scan(&prof.Name, &prof.Coins, &prof.Organization)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			log.Printf("[GET PROFILE - DNE] %v", err)
+			log.Printf("[GET PROFILE - NOT FOUND] %v | %v", prof.ID, err)
 			c.JSON(500, "Profile does not exist")
 			return
 		}
@@ -54,14 +54,12 @@ func updateProfile(c *gin.Context) {
 	if prof.Name == "" {
 		prof.Name = oldProfile.Name
 	}
-	if prof.Coins == 0 {
-		prof.Coins = oldProfile.Coins
-	}
+
 	if prof.Organization == false {
 		prof.Organization = oldProfile.Organization
 	}
 
-	_, err = repo.conn.Exec(context.Background(), updateProfilebyID, &prof.ID, &prof.Name, &prof.Coins, &prof.Organization)
+	_, err = repo.conn.Exec(context.Background(), updateProfilebyID, &prof.ID, &prof.Name)
 	if err != nil {
 		c.JSON(500, err)
 		return
@@ -362,7 +360,7 @@ func verifiedOrganization(c *gin.Context) {
 
 func donate(c *gin.Context) {
 	type DonateRequest struct {
-		UID   string `json:'UID'`
+		UID   string `json:'uid'`
 		Value int    `json:'value'`
 	}
 	var req *DonateRequest
@@ -407,11 +405,11 @@ const (
 	promoteToOrg      = "UPDATE profiles SET coins = coins + $2, organization = $3 WHERE uid = $1"
 	completeTaskByID  = "UPDATE tasks_accepted SET status = $2 WHERE task_id = $1"
 	addRewardByID     = "UPDATE profiles SET coins = coins + $2 WHERE uid = $1"
-	selectProfileByID = "SELECT name, coins, organization FROM profiles WHERE uid = $1;"
+	selectProfileByID = "SELECT name, coins, organization FROM profiles WHERE uid = $1"
 	updateProfilebyID = "INSERT INTO profiles (uid, name, coins, organization) " +
-		"VALUES ($1, $2, $3, $4) " +
-		"ON CONFLICT (uid )" +
-		"DO UPDATE SET name = $2, coins = $3, organization = $4;"
+		"VALUES ($1, $2, 0, false) " +
+		"ON CONFLICT (uid)" +
+		"DO UPDATE SET name = $2;"
 	selectTaskByID = "SELECT * FROM tasks WHERE id = $1;"
 	updateTaskByID = "UPDATE tasks SET reward = $2 WHERE uid = $1;"
 	postTaskQuery  = "INSERT INTO tasks (created_by, date_to_complete, task_type, time_to_complete, lat, " +
