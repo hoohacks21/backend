@@ -1,0 +1,5 @@
+We followed https://medium.com/coinmonks/my-blockchain-in-go-8e2d1a853a84
+
+Our version:
+-Using gin instead of stdlib Gorilla handlers
+-Our use case of tasks, instead of bets
