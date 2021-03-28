@@ -294,8 +294,8 @@ const (
 	completeTaskByID = "UPDATE tasks_accepted SET status = $2 WHERE task_id = $1"
 	addRewardByID = "UPDATE profiles SET coins = coins + $2 WHERE uid = $1"
 	selectProfileByID = "SELECT name, coins, organization FROM profiles WHERE uid = $1"
-	updateProfilebyID = "INSERT INTO profiles (uid, name) "+
-	"VALUES ($1, $2) " +
+	updateProfilebyID = "INSERT INTO profiles (uid, name, coins, organization) "+
+	"VALUES ($1, $2, 0, false) " +
 	"ON CONFLICT (uid)" +
 	"DO UPDATE SET name = $2;"
 	selectTaskByID = "SELECT * FROM tasks WHERE id = $1;"
