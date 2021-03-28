@@ -1,4 +1,4 @@
-package github.com/hoohacks21/blockchain
+package blockchain
 
 import (
 	"crypto/sha256"

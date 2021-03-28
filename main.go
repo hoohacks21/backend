@@ -40,8 +40,6 @@ func main() {
 		log.Fatalf("error initializing app: %v", err)
 	}
 
-	repo = NewRepo(sqlConnString)
-
 	authMiddleware := func() gin.HandlerFunc {
 		return func(c *gin.Context) {
 			ctx := context.Background()
@@ -82,18 +80,18 @@ func main() {
 		})
 	})
 
-	r.GET("/profile", authMiddleware(), getProfile)
-	r.PUT("/profile", authMiddleware(), updateProfile)
-	r.GET("/task", authMiddleware(), getTask)
-	r.GET("/todo_tasks", authMiddleware(), getMyTasks)
-	r.GET("/my_tasks", authMiddleware(), getTasksIMade)
-	r.POST("/task", authMiddleware(), postTask)
-	r.DELETE("/task", authMiddleware(), deleteTask)
-	r.GET("/tasks", authMiddleware(), getTasks)
-	r.POST("/complete_task", authMiddleware(), completeTask)
-	r.POST("/accept_task", authMiddleware(), acceptTask)
-	r.POST("/donate", authMiddleware(), donate)
-	r.PUT("/verified_organization", authMiddleware(), verifiedOrganization)
+	r.GET("/profile", authMiddleware(), getProfile)                         //get your profile
+	r.PUT("/profile", authMiddleware(), updateProfile)                      //update your name
+	r.PUT("/verified_organization", authMiddleware(), verifiedOrganization) //become an org
+	r.GET("/task", authMiddleware(), getTask)                               //get a task by ID
+	r.GET("/todo_tasks", authMiddleware(), getMyTasks)                      //get tasks you signed up for
+	r.GET("/my_tasks", authMiddleware(), getTasksIMade)                     //get tasks you made
+	r.POST("/task", authMiddleware(), postTask)                             //create task
+	r.DELETE("/task", authMiddleware(), deleteTask)                         //delete your task
+	r.GET("/tasks", authMiddleware(), getTasks)                             //get all tasks
+	r.POST("/complete_task", authMiddleware(), completeTask)                //mark task you made as complete
+	r.POST("/accept_task", authMiddleware(), acceptTask)                    //accept task from list
+	r.POST("/donate", authMiddleware(), donate)                             //donate ecocoin to other
 
 	// r.POST("/endpoint", authMiddleware(), endpointDandler)
 

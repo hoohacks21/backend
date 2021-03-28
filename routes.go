@@ -11,6 +11,8 @@ import (
 )
 
 func getProfile(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	prof := &Profile{}
 
 	prof.ID = c.GetString("uid")
@@ -30,6 +32,8 @@ func getProfile(c *gin.Context) {
 }
 
 func updateProfile(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	var prof *Profile
 	err := c.Bind(&prof)
 	if err != nil && err != pgx.ErrNoRows {
@@ -69,6 +73,8 @@ func updateProfile(c *gin.Context) {
 }
 
 func getTask(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	taskID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
 		log.Printf("[GET TASK 1] %v | %v", taskID, err)
@@ -99,6 +105,8 @@ func getTask(c *gin.Context) {
 }
 
 func postTask(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	var reqTask *Task
 	err := c.Bind(&reqTask)
 	if err != nil {
@@ -155,6 +163,8 @@ func postTask(c *gin.Context) {
 }
 
 func acceptTask(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	var reqTask *TasksAccepted
 	err := c.Bind(&reqTask)
 	if err != nil {
@@ -182,6 +192,8 @@ func acceptTask(c *gin.Context) {
 }
 
 func completeTask(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	var taskCompleteRequest *TaskCompleteRequest
 	err := c.Bind(&taskCompleteRequest)
 	if err != nil {
@@ -218,6 +230,8 @@ func completeTask(c *gin.Context) {
 	// Get user who completed the task by their uid, update task in task table, give suer reward.
 }
 func deleteTask(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	taskID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
 		log.Printf("[DELETE TASK 1] %v | %v", taskID, err)
@@ -242,6 +256,8 @@ func deleteTask(c *gin.Context) {
 }
 
 func getTasks(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	rows, err := repo.conn.Query(context.Background(), getTasksQuery)
 	if err != nil {
 		log.Printf("[GET TASKS] %v", err)
@@ -277,6 +293,8 @@ func getTasks(c *gin.Context) {
 }
 
 func getMyTasks(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	rows, err := repo.conn.Query(context.Background(), getMyTasksQuery, c.GetString("uid"))
 	if err != nil {
 		log.Printf("[GET TASKS] %v", err)
@@ -312,6 +330,8 @@ func getMyTasks(c *gin.Context) {
 }
 
 func getTasksIMade(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	rows, err := repo.conn.Query(context.Background(), getTasksIMadeQuery, c.GetString("uid"))
 	if err != nil {
 		log.Printf("[getTasksIMade] %v", err)
@@ -347,6 +367,8 @@ func getTasksIMade(c *gin.Context) {
 }
 
 func verifiedOrganization(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	uid := c.GetString("uid")
 
 	_, err := repo.conn.Exec(context.Background(), promoteToOrg, uid, 100, true)
@@ -359,6 +381,8 @@ func verifiedOrganization(c *gin.Context) {
 }
 
 func donate(c *gin.Context) {
+	repo = NewRepo(sqlConnString)
+	defer repo.conn.Close(context.Background())
 	type DonateRequest struct {
 		UID   string `json:'uid'`
 		Value int    `json:'value'`
@@ -416,7 +440,7 @@ const (
 		"long, reward, description, location) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);"
 	deleteTaskByID     = "DELETE FROM tasks WHERE created_by = $1 and id = $2;"
 	getTasksQuery      = "SELECT * FROM tasks WHERE ID NOT IN (SELECT task_id FROM tasks_accepted);"
-	getMyTasksQuery    = "SELECT * FROM tasks_accepted WHERE uid = $1;"
+	getMyTasksQuery    = "SELECT * FROM tasks WHERE id IN (SELECT task_id FROM tasks_accepted WHERE uid = $1);"
 	getTasksIMadeQuery = "SELECT * FROM tasks WHERE created_by = $1;"
 	selectAcceptedTask = "SELECT uid, task_id FROM tasks_accepted WHERE task_id = $1"
 	postAcceptTask     = "INSERT INTO tasks_accepted VALUES ($1,$2,$3)"

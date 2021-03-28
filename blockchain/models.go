@@ -1,4 +1,4 @@
-package github.com/hoohacks21/blockchain
+package blockchain
 
 type Task struct {
 	UID   string `json:"playername"`
