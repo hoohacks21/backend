@@ -17,8 +17,8 @@ var (
 	app            *firebase.App
 	repo           *Repo
 	corsMiddleware = cors.New(cors.Config{
-		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
-		AllowHeaders: []string{"Authorization", "Origin", "Content-Length", "Content-Type"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
+		AllowHeaders:     []string{"Authorization", "Origin", "Content-Length", "Content-Type"},
 		AllowCredentials: true,
 		AllowAllOrigins:  true,
 		MaxAge:           12 * time.Hour,
@@ -52,14 +52,14 @@ func main() {
 			client, err := app.Auth(ctx)
 			if err != nil {
 				log.Printf("error getting Auth client: %v\n", err)
-				c.JSON(401, err)
+				c.AbortWithStatusJSON(401, err)
 				return
 			}
 
 			token, err := client.VerifyIDToken(ctx, idToken)
 			if err != nil {
 				log.Printf("error verifying ID token: %v\n", err)
-				c.JSON(401, err)
+				c.AbortWithStatusJSON(401, err)
 				return
 			}
 
@@ -82,16 +82,16 @@ func main() {
 		})
 	})
 
-	
-
 	r.GET("/profile", authMiddleware(), getProfile)
 	r.PUT("/profile", authMiddleware(), updateProfile)
 	r.GET("/task", authMiddleware(), getTask)
+	r.GET("/my_tasks", authMiddleware(), getMyTasks)
 	r.POST("/task", authMiddleware(), postTask)
 	r.DELETE("/task", authMiddleware(), deleteTask)
 	r.GET("/tasks", authMiddleware(), getTasks)
 	r.POST("/complete_task", authMiddleware(), completeTask)
 	r.POST("/accept_task", authMiddleware(), acceptTask)
+	r.POST("/donate", authMiddleware(), donate)
 	r.PUT("/verified_organization", authMiddleware(), verifiedOrganization)
 
 	// r.POST("/endpoint", authMiddleware(), endpointDandler)
