@@ -183,6 +183,7 @@ func completeTask(c *gin.Context){
 	var taskCompleteRequest *TaskCompleteRequest
 	err := c.Bind(&taskCompleteRequest)
 	if err != nil {
+		log.Printf("[COMPLETE TASK] %v", err)
 		c.JSON(501, err)
 		return
 	}
@@ -192,7 +193,8 @@ func completeTask(c *gin.Context){
 	existingTask := &Task{}
 
 	err = repo.conn.QueryRow(context.Background(), selectTaskByID, taskCompleteRequest.TaskID).Scan(&existingTask.ID, &existingTask.CreatedBy, &existingTask.DateToComplete, &existingTask.TaskType, &existingTask.TimeToComplete, &existingTask.Lat, &existingTask.Long, &existingTask.Reward, &existingTask.Description, &existingTask.Status)
-	if err != nil {
+	if err != nil { 
+		log.Printf("[COMPLETE TASK] %v", err)
 		c.JSON(500, err)
 		return
 	}
@@ -215,6 +217,7 @@ func completeTask(c *gin.Context){
 
 	_, err = repo.conn.Exec(context.Background(), addRewardByID, taskCompleteRequest.UID, existingTask.Reward)
 	if err != nil {
+		log.Printf("[COMPLETE TASK] %v", err)
 		c.JSON(500, err)
 		return
 	}
@@ -232,6 +235,7 @@ func completeTask(c *gin.Context){
 
 	_, err = repo.conn.Exec(context.Background(), completeTaskByID, taskCompleteRequest.TaskID, 2)
 	if err != nil {
+		log.Printf("[COMPLETE TASK] %v", err)
 		c.JSON(500, err)
 		return
 	}
@@ -240,15 +244,22 @@ func completeTask(c *gin.Context){
 	// Get user who completed the task by their uid, update task in task table, give suer reward.
 }
 func deleteTask(c *gin.Context) {
-	var targetID *string
-	err := c.Bind(&targetID)
+	taskID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
+		log.Printf("[DELETE TASK 1] %v | %v", taskID, err)
+		c.JSON(500, err)
+		return
+	}
+
+	if err != nil {
+		log.Printf("[DELETE TASK 2] %v", err)
 		c.JSON(501, err)
 		return
 	}
 	
-	_, err = repo.conn.Exec(context.Background(), deleteTaskByID, c.GetString("uid"), &targetID)
+	_, err = repo.conn.Exec(context.Background(), deleteTaskByID, c.GetString("uid"), taskID)
 	if err != nil {
+		log.Printf("[DELETE TASK 3] %v", err)
 		c.JSON(500, err)
 		return
 	}
@@ -317,7 +328,7 @@ func verifiedOrganization(c *gin.Context){
 
 
 const (
-	completeTaskByID = "UPDATE tasks_accepted SET (status) = $2 WHERE task_id = $1"
+	completeTaskByID = "UPDATE tasks_accepted SET status = $2 WHERE task_id = $1"
 	addRewardByID = "UPDATE profiles SET coins = coins + $2 WHERE uid = $1"
 	selectProfileByID = "SELECT uid, name, coins, organization FROM profiles WHERE uid = $1;"
 	updateProfilebyID = "INSERT INTO profiles (uid, name, coins, organization) "+
@@ -327,7 +338,7 @@ const (
 	selectTaskByID = "SELECT * FROM tasks WHERE id = $1;"
 	updateTaskByID = "UPDATE tasks SET (status, reward) = $2, $3 WHERE uid = $1;"
 	postTaskQuery = "INSERT INTO tasks (created_by, date_to_complete, task_type, time_to_complete, lat, long, reward, description, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);"
-	deleteTaskByID = "DELETE FROM tasks WHERE uid = $1;"
+	deleteTaskByID = "DELETE FROM tasks WHERE created_by = $1 and id = $2;"
 	getTasksQuery = "SELECT * FROM tasks WHERE ID NOT IN (SELECT task_id FROM tasks_accepted);"
 	selectAcceptedTask = "SELECT uid, task_id FROM tasks_accepted WHERE task_id = $1"
 	postAcceptTask = "INSERT INTO tasks_accepted (uid, task_id) VALUES ($1,$2)"
